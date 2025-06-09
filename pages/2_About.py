@@ -37,8 +37,8 @@ The application uses Long Short-Term Memory (LSTM) neural networks to analyze hi
 
 ### Contact
 For any questions or feedback about this application, please contact:
-- Email: kresnaprayoga2003@gmail.com
-- GitHub: github.com/kresnaprayoga27
+- Email: kresnaprayogaacckuliah@gmail.com
+- GitHub: github.com/kresnaprayoga17
 
 ### Disclaimer
 This application is for educational purposes only. Cryptocurrency trading involves substantial risk, and past performance does not guarantee future results.
