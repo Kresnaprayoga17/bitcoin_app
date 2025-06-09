@@ -151,7 +151,7 @@ try:
 
                 future_df = pd.DataFrame({
                     'Date': future_dates,
-                    'Predicted': future_pred.flatten()
+                    'Predicted': future_pred.flatten() if future_pred.ndim > 1 else future_pred
                 }).set_index('Date')
 
                 # Plot future predictions
@@ -162,6 +162,7 @@ try:
                     x=data.index[-30:],
                     y=data['Close'].values[-30:],
                     name='Historical',
+                    mode='lines+markers',
                     line=dict(color='blue')
                 ))
 
@@ -170,6 +171,7 @@ try:
                     x=future_df.index,
                     y=future_df['Predicted'],
                     name='Future Prediction',
+                    mode='lines+markers',
                     line=dict(color='red', dash='dash')
                 ))
 
@@ -189,5 +191,3 @@ try:
                         future_df.style.format({'Predicted': '${:,.2f}'})
                     )
 
-except Exception as e:
-    st.error(f"An error occurred: {str(e)}")
