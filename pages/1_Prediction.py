@@ -66,7 +66,7 @@ try:
         # Select prediction days
         prediction_days = st.selectbox(
             'Select prediction period',
-            options=[1, 3, 7, 14, 30],
+            options=[1, 3, 7],
             format_func=lambda x: f'{x} days'
         )
 
