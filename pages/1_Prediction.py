@@ -187,6 +187,7 @@ try:
                 with col1:
                     st.plotly_chart(fig2, use_container_width=True)
                 with col2:
+                    st.write(f"Predicted prices for next {prediction_days} days:")
                     st.dataframe(
                         future_df.style.format({'Predicted': '${:,.2f}'})
                     )
