@@ -81,7 +81,7 @@ try:
                 model.add(LSTM(64, return_sequences=False))
                 model.add(Dense(25))
                 model.add(Dense(1))
-                model.compile(optimizer='adam', loss='mean_squared_error')
+                model.compile(optimizer='nadam', loss='mean_squared_error')
 
                 model.fit(x_train, y_train, batch_size=1, epochs=1, verbose=0)
 
