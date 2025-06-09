@@ -5,17 +5,7 @@ import yfinance as yf
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import LSTM, Dense
-
-def create_lstm_model(input_shape):
-    model = Sequential()
-    model.add(LSTM(128, return_sequences=True, input_shape=input_shape))
-    model.add(LSTM(64, return_sequences=False))
-    model.add(Dense(25))
-    model.add(Dense(1))
-    model.compile(optimizer='nadam', loss='mean_squared_error')
-    return model
+from keras.models import load_model
 
 def prepare_data(data, lookback=60):
     scaler = MinMaxScaler(feature_range=(0, 1))
@@ -53,13 +43,17 @@ st.set_page_config(layout="wide", page_title="Bitcoin Price Prediction")
 
 st.title('Bitcoin Price Prediction')
 st.markdown("""
-This page uses LSTM (Long Short-Term Memory) neural networks to predict Bitcoin prices.
-The model is trained on historical data and can predict future price movements.
+This page uses a pre-trained LSTM (Long Short-Term Memory) neural network to predict Bitcoin prices.
+The model has been trained on historical data to identify patterns and predict future price movements.
 """)
 
 # Load and prepare data
 ticker = "BTC-USD"
 try:
+    # Load the pre-trained model
+    model = load_model('lstm_model_actualvsforecast.h5')
+    st.success("Pre-trained LSTM model loaded successfully!")
+    
     data = yf.download(tickers=ticker, start='2021-01-01', progress=False)
     
     if data.empty:
@@ -70,15 +64,9 @@ try:
         
         # Split data
         train_size = int(len(x_all) * 0.95)
-        x_train, y_train = x_all[:train_size], y_all[:train_size]
         x_test, y_test = x_all[train_size:], y_all[train_size:]
         
-        # Create and train model
-        with st.spinner('Training LSTM model... This may take a few minutes.'):
-            model = create_lstm_model((x_train.shape[1], 1))
-            model.fit(x_train, y_train, batch_size=1, epochs=1, verbose=0)
-        
-        # Make predictions
+        # Make predictions using the pre-trained model
         predictions = model.predict(x_test)
         predictions = scaler.inverse_transform(predictions)
         actual = scaler.inverse_transform(y_test.reshape(-1, 1))
@@ -191,3 +179,4 @@ try:
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
+    st.info("Make sure the 'lstm_model_actualvsforecast.h5' file is in the current directory.")
