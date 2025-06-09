@@ -33,11 +33,7 @@ def clean_column_names(data, ticker):
 def main():
     st.set_page_config(layout="wide", page_title="Bitcoin Dashboard")
 
-    try:
-        with open('style.css') as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning("CSS file not found. Using default styles.")
+    
 
     st.title('BITCOIN PRICE DASHBOARD')
     st.markdown("""
