@@ -117,9 +117,9 @@ try:
                 st.subheader('Actual vs Predicted Prices')
                 fig = go.Figure()
                 fig.add_trace(go.Scatter(x=pred_df.index, y=pred_df['Actual'],
-                                        name='Actual', line=dict(color='blue')))
+                                        name='Actual', line=dict(color='blue'), hoverinfo='none'))
                 fig.add_trace(go.Scatter(x=pred_df.index, y=pred_df['Predicted'],
-                                        name='Predicted', line=dict(color='red')))
+                                        name='Predicted', line=dict(color='red'), hoverinfo='none'))
 
                 fig.update_layout(
                     title='LSTM Model: Actual vs Predicted Bitcoin Prices',
@@ -130,65 +130,13 @@ try:
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-                # Future predictions section
-                st.subheader('Future Price Predictions')
+                # Future predictions section removed as per request
 
-                # Get the last sequence
-                last_sequence = scaler.transform(
-                    data['Close'].values[-60:].reshape(-1, 1)
-                ).flatten()
-
-                # Generate future predictions
-                future_pred = predict_future(
-                    model, last_sequence, scaler, prediction_days
+                # Display prediction table only
+                st.write(f"Predicted prices for next {prediction_days} days:")
+                st.dataframe(
+                    pred_df.style.format({'Actual': '${:,.2f}', 'Predicted': '${:,.2f}'})
                 )
-
-                # Create future dates
-                future_dates = [
-                    data.index[-1] + timedelta(days=x)
-                    for x in range(1, prediction_days + 1)
-                ]
-
-                # Create DataFrame for future predictions
-                future_df = pd.DataFrame({
-                    'Date': future_dates,
-                    'Predicted': future_pred.flatten()
-                }).set_index('Date')
-
-                # Plot future predictions
-                fig = go.Figure()
-
-                # Plot last 30 days of actual data
-                fig.add_trace(go.Scatter(
-                    x=data.index[-30:],
-                    y=data['Close'].values[-30:],
-                    name='Historical',
-                    line=dict(color='blue')
-                ))
-
-                # Plot future predictions
-                fig.add_trace(go.Scatter(
-                    x=future_df.index,
-                    y=future_df['Predicted'],
-                    name='Future Prediction',
-                    line=dict(color='red', dash='dash')
-                ))
-
-                fig.update_layout(
-                    title=f'Bitcoin Price Prediction - Next {prediction_days} Days',
-                    xaxis_title='Date',
-                    yaxis_title='Price (USD)',
-                    height=500,
-                    template="plotly_dark"
-                )
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.plotly_chart(fig, use_container_width=True)
-                with col2:
-                    st.write(f"Predicted prices for next {prediction_days} days:")
-                    st.dataframe(
-                        future_df.style.format({'Predicted': '${:,.2f}'})
-                    )
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
