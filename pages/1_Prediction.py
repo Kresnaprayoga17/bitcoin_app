@@ -181,13 +181,14 @@ try:
                     height=500,
                     template="plotly_dark"
                 )
-                st.plotly_chart(fig, use_container_width=True)
-
-                # Display prediction table
-                st.write(f"Predicted prices for next {prediction_days} days:")
-                st.dataframe(
-                    future_df.style.format({'Predicted': '${:,.2f}'})
-                )
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.plotly_chart(fig, use_container_width=True)
+                with col2:
+                    st.write(f"Predicted prices for next {prediction_days} days:")
+                    st.dataframe(
+                        future_df.style.format({'Predicted': '${:,.2f}'})
+                    )
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
