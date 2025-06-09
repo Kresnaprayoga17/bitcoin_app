@@ -191,3 +191,5 @@ try:
                         future_df.style.format({'Predicted': '${:,.2f}'})
                     )
 
+except Exception as e:
+    st.error(f"An error occurred: {str(e)}")
