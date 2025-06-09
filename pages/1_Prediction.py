@@ -47,105 +47,117 @@ This page uses a pre-trained LSTM (Long Short-Term Memory) neural network to pre
 The model has been trained on historical data to identify patterns and predict future price movements.
 """)
 
-# Load and prepare data
 ticker = "BTC-USD"
+
 try:
-    # Load the pre-trained model
-    model = load_model('lstm_model_actualvsforecast.h5')
-    st.success("Pre-trained LSTM model loaded successfully!")
-    
     data = yf.download(tickers=ticker, start='2021-01-01', progress=False)
-    
+
     if data.empty:
         st.error("Failed to fetch data. Please check your internet connection.")
     else:
         # Prepare data for LSTM
         x_all, y_all, scaler = prepare_data(data['Close'])
-        
+
         # Split data
         train_size = int(len(x_all) * 0.95)
+        x_train, y_train = x_all[:train_size], y_all[:train_size]
         x_test, y_test = x_all[train_size:], y_all[train_size:]
-        
-        # Make predictions using the pre-trained model
-        predictions = model.predict(x_test)
-        predictions = scaler.inverse_transform(predictions)
-        actual = scaler.inverse_transform(y_test.reshape(-1, 1))
-        
-        # Create prediction DataFrame
-        pred_df = pd.DataFrame({
-            'Date': data.index[train_size+60:],
-            'Actual': actual.flatten(),
-            'Predicted': predictions.flatten()
-        }).set_index('Date')
-        
-        # Display model performance
-        st.subheader('Model Performance')
-        metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
-        
-        with metrics_col1:
-            rmse = np.sqrt(np.mean((predictions - actual) ** 2))
-            st.metric("RMSE", f"${rmse:,.2f}")
-            
-        with metrics_col2:
-            mae = np.mean(np.abs(predictions - actual))
-            st.metric("MAE", f"${mae:,.2f}")
-            
-        with metrics_col3:
-            mape = np.mean(np.abs((actual - predictions) / actual)) * 100
-            st.metric("MAPE", f"{mape:.2f}%")
-        
-        # Plot predictions vs actual
-        st.subheader('Actual vs Predicted Prices')
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=pred_df.index, y=pred_df['Actual'], 
-                                name='Actual', line=dict(color='blue')))
-        fig.add_trace(go.Scatter(x=pred_df.index, y=pred_df['Predicted'], 
-                                name='Predicted', line=dict(color='red')))
-        
-        fig.update_layout(
-            title='LSTM Model: Actual vs Predicted Bitcoin Prices',
-            xaxis_title='Date',
-            yaxis_title='Price (USD)',
-            height=500,
-            template="plotly_dark"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Future predictions section
-        st.subheader('Future Price Predictions')
+
+        # Select prediction days
         prediction_days = st.selectbox(
             'Select prediction period',
             options=[1, 3, 7, 14, 30],
             format_func=lambda x: f'{x} days'
         )
-        
+
         if st.button('Generate Predictions'):
-            with st.spinner(f'Generating {prediction_days}-day prediction...'):
+            with st.spinner(f'Training model and generating {prediction_days}-day prediction...'):
+                # Create and train model from scratch
+                from keras.models import Sequential
+                from keras.layers import LSTM, Dense
+
+                model = Sequential()
+                model.add(LSTM(128, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+                model.add(LSTM(64, return_sequences=False))
+                model.add(Dense(25))
+                model.add(Dense(1))
+                model.compile(optimizer='adam', loss='mean_squared_error')
+
+                model.fit(x_train, y_train, batch_size=1, epochs=1, verbose=0)
+
+                # Make predictions
+                predictions = model.predict(x_test)
+                predictions = scaler.inverse_transform(predictions)
+                actual = scaler.inverse_transform(y_test.reshape(-1, 1))
+
+                # Create prediction DataFrame
+                pred_df = pd.DataFrame({
+                    'Date': data.index[train_size+60:],
+                    'Actual': actual.flatten(),
+                    'Predicted': predictions.flatten()
+                }).set_index('Date')
+
+                # Display model performance
+                st.subheader('Model Performance')
+                metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+
+                with metrics_col1:
+                    rmse = np.sqrt(np.mean((predictions - actual) ** 2))
+                    st.metric("RMSE", f"${rmse:,.2f}")
+
+                with metrics_col2:
+                    mae = np.mean(np.abs(predictions - actual))
+                    st.metric("MAE", f"${mae:,.2f}")
+
+                with metrics_col3:
+                    mape = np.mean(np.abs((actual - predictions) / actual)) * 100
+                    st.metric("MAPE", f"{mape:.2f}%")
+
+                # Plot predictions vs actual
+                st.subheader('Actual vs Predicted Prices')
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=pred_df.index, y=pred_df['Actual'],
+                                        name='Actual', line=dict(color='blue')))
+                fig.add_trace(go.Scatter(x=pred_df.index, y=pred_df['Predicted'],
+                                        name='Predicted', line=dict(color='red')))
+
+                fig.update_layout(
+                    title='LSTM Model: Actual vs Predicted Bitcoin Prices',
+                    xaxis_title='Date',
+                    yaxis_title='Price (USD)',
+                    height=500,
+                    template="plotly_dark"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Future predictions section
+                st.subheader('Future Price Predictions')
+
                 # Get the last sequence
                 last_sequence = scaler.transform(
                     data['Close'].values[-60:].reshape(-1, 1)
                 ).flatten()
-                
+
                 # Generate future predictions
                 future_pred = predict_future(
                     model, last_sequence, scaler, prediction_days
                 )
-                
+
                 # Create future dates
                 future_dates = [
-                    data.index[-1] + timedelta(days=x) 
+                    data.index[-1] + timedelta(days=x)
                     for x in range(1, prediction_days + 1)
                 ]
-                
+
                 # Create DataFrame for future predictions
                 future_df = pd.DataFrame({
                     'Date': future_dates,
                     'Predicted': future_pred.flatten()
                 }).set_index('Date')
-                
+
                 # Plot future predictions
                 fig = go.Figure()
-                
+
                 # Plot last 30 days of actual data
                 fig.add_trace(go.Scatter(
                     x=data.index[-30:],
@@ -153,7 +165,7 @@ try:
                     name='Historical',
                     line=dict(color='blue')
                 ))
-                
+
                 # Plot future predictions
                 fig.add_trace(go.Scatter(
                     x=future_df.index,
@@ -161,7 +173,7 @@ try:
                     name='Future Prediction',
                     line=dict(color='red', dash='dash')
                 ))
-                
+
                 fig.update_layout(
                     title=f'Bitcoin Price Prediction - Next {prediction_days} Days',
                     xaxis_title='Date',
@@ -170,7 +182,7 @@ try:
                     template="plotly_dark"
                 )
                 st.plotly_chart(fig, use_container_width=True)
-                
+
                 # Display prediction table
                 st.write(f"Predicted prices for next {prediction_days} days:")
                 st.dataframe(
@@ -179,4 +191,3 @@ try:
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
-    st.info("Make sure the 'lstm_model_actualvsforecast.h5' file is in the current directory.")
