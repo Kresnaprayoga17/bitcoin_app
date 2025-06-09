@@ -66,7 +66,7 @@ try:
         # Select prediction days
         prediction_days = st.selectbox(
             'Select prediction period',
-            options=[1, 3, 7],
+            options=[1, 3, 7, 14, 30],
             format_func=lambda x: f'{x} days'
         )
 
@@ -134,9 +134,60 @@ try:
 
                 # Display prediction table only
                 st.write(f"Predicted prices for next {prediction_days} days:")
-                st.dataframe(
-                    pred_df.style.format({'Actual': '${:,.2f}', 'Predicted': '${:,.2f}'})
+
+                # Generate future predictions
+                last_sequence = scaler.transform(
+                    data['Close'].values[-60:].reshape(-1, 1)
+                ).flatten()
+
+                future_pred = predict_future(
+                    model, last_sequence, scaler, prediction_days
                 )
+
+                future_dates = [
+                    data.index[-1] + timedelta(days=x)
+                    for x in range(1, prediction_days + 1)
+                ]
+
+                future_df = pd.DataFrame({
+                    'Date': future_dates,
+                    'Predicted': future_pred.flatten()
+                }).set_index('Date')
+
+                # Plot future predictions
+                fig2 = go.Figure()
+
+                # Plot last 30 days of actual data
+                fig2.add_trace(go.Scatter(
+                    x=data.index[-30:],
+                    y=data['Close'].values[-30:],
+                    name='Historical',
+                    line=dict(color='blue')
+                ))
+
+                # Plot future predictions
+                fig2.add_trace(go.Scatter(
+                    x=future_df.index,
+                    y=future_df['Predicted'],
+                    name='Future Prediction',
+                    line=dict(color='red', dash='dash')
+                ))
+
+                fig2.update_layout(
+                    title=f'Bitcoin Price Prediction - Next {prediction_days} Days',
+                    xaxis_title='Date',
+                    yaxis_title='Price (USD)',
+                    height=500,
+                    template="plotly_dark"
+                )
+
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.plotly_chart(fig2, use_container_width=True)
+                with col2:
+                    st.dataframe(
+                        future_df.style.format({'Predicted': '${:,.2f}'})
+                    )
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
