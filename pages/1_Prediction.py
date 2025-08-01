@@ -106,15 +106,15 @@ try:
 
                 with metrics_col1:
                     rmse = np.sqrt(np.mean((predictions - actual) ** 2))
-                    st.metric("RMSE", f"${rmse:,.2f}")
+                    st.metric("Margin Maksimal", f"${rmse:,.2f}")
 
                 with metrics_col2:
                     mae = np.mean(np.abs(predictions - actual))
-                    st.metric("MAE", f"${mae:,.2f}")
+                    st.metric("Margin Minimum", f"${mae:,.2f}")
 
                 with metrics_col3:
                     mape = np.mean(np.abs((actual - predictions) / actual)) * 100
-                    st.metric("MAPE", f"{mape:.2f}%")
+                    st.metric("Persentase Margin", f"{mape:.2f}%")
 
                 # Plot predictions vs actual
                 st.subheader('Actual vs Predicted Prices')
