@@ -99,6 +99,9 @@ try:
 
                 # Display model performance
                 st.subheader('Model Performance')
+                st.markdown("""
+                Performa ini bisa di gunakan sebagai patokan marginal terhadap kemelencengan error yang bisa terjadi
+                """)
                 metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
 
                 with metrics_col1:
